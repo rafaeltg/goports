@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: server
+    ports:
+      - "8088:8088"
+    environment:
+      - ENVIRONMENT=prod
+      - LOG_LEVEL=-10
+      - APP_NAME=ports-service
+      - APP_VERSION=v0.0.1
+      - SERVER_PORT=8088
+
+  ingestor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: ingestor
+    environment:
+      - ENVIRONMENT=prod
+      - LOG_LEVEL=-10
+      - APP_NAME=ports-service
+      - APP_VERSION=v0.0.1
+      - INGESTOR_FILEPATH=/ingest/ports.json
+    volumes:
+      - ./testdata:/ingest/
+    depends_on:
+      - server
