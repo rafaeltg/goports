@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -46,11 +47,19 @@ func main() {
 	defer cancel()
 
 	// Dependency injection
-	httpClient := http.NewCient(cfg.Server.URI())
+	httpClient := http.NewCient(cfg.Server.Host())
 	portClient := http.NewPortClient(httpClient, logger)
-	portsIngestor := ingest.NewPortsIngestor(portClient, logger)
+	portIngestor := ingest.NewPortIngestor(
+		portClient,
+		logger,
+		ingest.WithBatchSize(cfg.Ingestor.BatchSize),
+	)
 
-	err = portsIngestor.Process(ctx, cfg.Ingestor.Filepath)
+	logger.Info("running ingestor",
+		slog.Any("config", cfg),
+	)
+
+	err = portIngestor.Process(ctx, cfg.Ingestor.Filepath)
 	if err != nil {
 		logger.Error(
 			"error importing ports data",

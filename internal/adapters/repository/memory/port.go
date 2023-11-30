@@ -42,12 +42,12 @@ func (r *PortRepository) BulkUpsert(ctx context.Context, ports domain.Ports) err
 		slog.Int("ports.length", len(ports)),
 	)
 
-	for _, p := range ports {
+	for i := range ports {
 		select {
 		case <-ctx.Done():
 			return nil
 		default:
-			r.db.Set(ctx, p.ID, p)
+			r.db.Set(ctx, ports[i].ID, &ports[i])
 		}
 	}
 

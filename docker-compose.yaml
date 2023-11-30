@@ -6,7 +6,6 @@ services:
       context: .
       dockerfile: Dockerfile
       target: server
-    container_name: ports-server
     ports:
       - 8088:8088
     environment:
@@ -15,22 +14,31 @@ services:
       - APP_NAME=ports-service
       - APP_VERSION=v0.0.1
       - SERVER_PORT=8088
+    networks:
+      - ports-public
 
   ingestor:
     build:
       context: .
       dockerfile: Dockerfile
       target: ingestor
-    container_name: ports-ingestor
     environment:
-      - ENVIRONMENT=prod
+      - ENVIRONMENT=test
       - LOG_LEVEL=-10
-      - APP_NAME=ports-service
+      - APP_NAME=ports-ingestor
       - APP_VERSION=v0.0.1
       - INGESTOR_FILEPATH=/ingest/ports.json
-      - SERVER_HOST=server
+      - INGESTOR_BATCH_SIZE=50
+      - SERVER_HOSTNAME=http://server
       - SERVER_PORT=8088
     volumes:
       - ./testdata:/ingest/
     depends_on:
       - server
+    networks:
+      - ports-public
+
+networks:
+  ports-public:
+    name: ports-network
+    driver: bridge

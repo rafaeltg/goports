@@ -7,7 +7,6 @@ linters:
   enable:
     - bodyclose
     - gochecknoinits
-    - gochecknoglobals
     - gocritic
     - gocyclo
     - godot
@@ -50,6 +49,5 @@ issues:
       linters:
         - errcheck
         - gosec
-        - gochecknoglobals
   include:
     - EXC0002

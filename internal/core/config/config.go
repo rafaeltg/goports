@@ -35,13 +35,14 @@ type (
 
 	// Server contains server environment variables.
 	Server struct {
-		Host string `env:"HOST" envDefault:"0.0.0.0"`
-		Port int    `env:"PORT" envDefault:"8080"`
+		Hostname string `env:"HOSTNAME"`
+		Port     int    `env:"PORT" envDefault:"8080"`
 	}
 
 	// Ingestor contains ingestor environment variables.
 	Ingestor struct {
-		Filepath string `env:"FILEPATH"`
+		BatchSize int    `env:"BATCH_SIZE" envDefault:"50"`
+		Filepath  string `env:"FILEPATH"`
 	}
 )
 
@@ -60,6 +61,6 @@ func (e Environment) IsProduction() bool {
 	return strings.ToUpper(string(e)) == string(Production)
 }
 
-func (s Server) URI() string {
-	return fmt.Sprintf("%s:%d", s.Host, s.Port)
+func (s Server) Host() string {
+	return fmt.Sprintf("%s:%d", s.Hostname, s.Port)
 }

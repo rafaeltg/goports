@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	gohttp "net/http"
 	"os"
 	"os/signal"
@@ -95,7 +96,10 @@ func main() {
 		return err
 	})
 
-	logger.InfoContext(ctx, "application is up")
+	logger.InfoContext(ctx,
+		"application is up",
+		slog.Any("config", cfg),
+	)
 
 	_ = g.Wait()
 

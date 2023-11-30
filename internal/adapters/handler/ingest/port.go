@@ -10,35 +10,42 @@ import (
 	"sync"
 
 	"github.com/rafaeltg/goports/internal/core/domain"
+	"github.com/rafaeltg/goports/internal/core/port"
 	"github.com/rafaeltg/goports/pkg/logging"
 )
 
-const batchSize int = 20
+const batchSizeDefault int = 20
 
 type (
-	PortClient interface {
-		BulkUpsert(context.Context, domain.Ports) error
+	PortIngestor struct {
+		portSvc   port.PortService
+		batchSize int
+		logger    *slog.Logger
 	}
 
-	PortsIngestor struct {
-		client PortClient
-		logger *slog.Logger
-	}
+	PortIngestorOption func(*PortIngestor)
 )
 
-func NewPortsIngestor(client PortClient, logger *slog.Logger) *PortsIngestor {
-	return &PortsIngestor{
-		client: client,
-		logger: logger,
+func NewPortIngestor(svc port.PortService, logger *slog.Logger, opts ...PortIngestorOption) *PortIngestor {
+	i := &PortIngestor{
+		portSvc:   svc,
+		logger:    logger,
+		batchSize: batchSizeDefault,
 	}
+
+	for _, opt := range opts {
+		opt(i)
+	}
+
+	return i
 }
 
-func (i *PortsIngestor) Process(ctx context.Context, filename string) error {
+func (i *PortIngestor) Process(ctx context.Context, filename string) error {
 	l := i.logger.With(
 		slog.String("filepath", filename),
 	)
 
-	l.InfoContext(ctx, "processing file")
+	l.InfoContext(ctx, "[PortIngestor.Process] processing")
 
 	f, err := os.Open(filepath.Clean(filename))
 	if err != nil {
@@ -72,7 +79,7 @@ func (i *PortsIngestor) Process(ctx context.Context, filename string) error {
 
 	wg := sync.WaitGroup{}
 	errCh := make(chan error)
-	batch := make(domain.Ports, 0, batchSize)
+	batch := make(domain.Ports, 0, i.batchSize)
 
 	done := false
 	for !done && dec.More() {
@@ -82,16 +89,22 @@ func (i *PortsIngestor) Process(ctx context.Context, filename string) error {
 		case err = <-errCh:
 			done = true
 		default:
-			// get key
-			portKey, err := dec.Token()
+			var id json.Token
+
+			id, err = dec.Token()
 			if err != nil {
-				return fmt.Errorf("failed to read port key: %w", err)
+				err = fmt.Errorf("failed to read port key: %w", err)
+				done = true
+
+				continue
 			}
 
-			// check key is a string
-			key, ok := portKey.(string)
+			key, ok := id.(string)
 			if !ok {
-				return fmt.Errorf("unexpected type for port key: '%T'", token)
+				err = fmt.Errorf("unexpected type for port key: '%T'", token)
+				done = true
+
+				continue
 			}
 
 			// read the rest of the port JSON
@@ -99,35 +112,51 @@ func (i *PortsIngestor) Process(ctx context.Context, filename string) error {
 
 			err = dec.Decode(&port)
 			if err != nil {
-				return fmt.Errorf("error on decoding port with key '%s': %w", key, err)
+				err = fmt.Errorf("error on decoding port with id '%s': %w", key, err)
+				done = true
+
+				continue
 			}
 
 			port.ID = key
 
 			batch = append(batch, port)
 
-			if len(batch) == batchSize {
+			if len(batch) == i.batchSize {
 				wg.Add(1)
 
 				go func(ports domain.Ports) {
 					defer wg.Done()
 
-					err := i.client.BulkUpsert(ctx, ports)
+					err := i.portSvc.BulkUpsert(ctx, ports)
 					if err != nil {
 						errCh <- err
 					}
 				}(batch)
 
-				batch = make(domain.Ports, 0, batchSize)
+				batch = make(domain.Ports, 0, i.batchSize)
 			}
 		}
 	}
 
 	if !done && len(batch) > 0 {
-		err = i.client.BulkUpsert(ctx, batch)
+		err = i.portSvc.BulkUpsert(ctx, batch)
 	}
 
 	wg.Wait()
 
+	if err != nil {
+		i.logger.ErrorContext(ctx,
+			"[PortIngestor.Process] failed to process file",
+			logging.Error(err),
+		)
+	}
+
 	return err
+}
+
+func WithBatchSize(v int) PortIngestorOption {
+	return func(pi *PortIngestor) {
+		pi.batchSize = v
+	}
 }

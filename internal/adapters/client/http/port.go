@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -11,7 +12,10 @@ import (
 	"github.com/rafaeltg/goports/pkg/logging"
 )
 
-const bulkUpsertPortsPath = "/ports/bulk-upsert"
+const (
+	portsPath           = "/ports"
+	bulkUpsertPortsPath = portsPath + "/bulk-upsert"
+)
 
 type (
 	HttpClient interface {
@@ -68,4 +72,47 @@ func (p *PortClient) BulkUpsert(ctx context.Context, ports domain.Ports) error {
 	}
 
 	return err
+}
+
+func (p *PortClient) Get(ctx context.Context, id string) (*domain.Port, error) {
+	p.logger.DebugContext(ctx,
+		"[PortClient.Get] executing",
+		slog.String("id", id),
+	)
+
+	req := &Request{
+		Path:   fmt.Sprintf("%s/%s", portsPath, id),
+		Method: http.MethodGet,
+	}
+
+	corrId, ok := cid.FromContext(ctx)
+	if !ok {
+		id, _ := uuid.NewV4()
+		corrId = id.String()
+	}
+
+	req.Headers = map[string]string{
+		"Content-Type": "application/json",
+		"X-Request-Id": corrId,
+	}
+
+	var port domain.Port
+
+	res := &Response{
+		StatusCode: http.StatusCreated,
+		Out:        &port,
+		OutError:   &ApiErrorResponse{},
+	}
+
+	err := p.client.Do(req, res)
+	if err != nil {
+		p.logger.ErrorContext(ctx,
+			"[PortClient.Get] failed to execute request",
+			logging.Error(err),
+		)
+
+		return nil, err
+	}
+
+	return &port, nil
 }

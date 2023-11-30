@@ -20,7 +20,6 @@ type (
 		Path    string
 		Method  string
 		Headers map[string]string
-		Queries map[string][]string
 		Body    interface{}
 	}
 
@@ -45,6 +44,7 @@ func (c *Client) Do(req *Request, res *Response) error {
 		if err != nil {
 			return err
 		}
+
 		httpReq.SetBody(bodyBytes)
 	}
 
@@ -53,26 +53,29 @@ func (c *Client) Do(req *Request, res *Response) error {
 
 	err := c.provider.Do(httpReq, httpRes)
 	fasthttp.ReleaseRequest(httpReq)
+
 	if err != nil {
 		return ApiError{
 			Message: err.Error(),
 		}
 	}
 
-	if res != nil {
-		if httpRes.StatusCode() != res.StatusCode {
-			err = json.Unmarshal(httpRes.Body(), res.OutError)
-			if err == nil {
-				return res.OutError
-			}
-		} else {
-			err = json.Unmarshal(httpRes.Body(), res.Out)
-		}
+	if res == nil {
+		return nil
+	}
 
-		if err != nil {
-			return ApiError{
-				Message: err.Error(),
-			}
+	if httpRes.StatusCode() != res.StatusCode {
+		err = json.Unmarshal(httpRes.Body(), res.OutError)
+		if err == nil {
+			return res.OutError
+		}
+	} else if res.Out != nil {
+		err = json.Unmarshal(httpRes.Body(), res.Out)
+	}
+
+	if err != nil {
+		return ApiError{
+			Message: err.Error(),
 		}
 	}
 
