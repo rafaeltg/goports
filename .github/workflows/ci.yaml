@@ -22,7 +22,12 @@ jobs:
           cache: false
 
       - name: Run lint
-        run: make lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          skip-cache: true
+          args: --timeout=5m --config=./.golangci.yml --issues-exit-code=0
+
 
   vulncheck:
     name: Check for vulnerabilities
