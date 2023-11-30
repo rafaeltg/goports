@@ -46,7 +46,10 @@ func TestProcess(t *testing.T) {
 		ingestor := ingest.NewPortIngestor(nil, loggerTest)
 
 		err := ingestor.Process(context.Background(), "testdata/ports_invalid_port.json")
-		assert.EqualError(t, err, "error on decoding port with id 'ABC': json: cannot unmarshal number into Go struct field Port.id of type string")
+		assert.EqualError(t, err,
+			"error on decoding port with id 'ABC': "+
+				"json: cannot unmarshal number into Go struct field Port.id of type string",
+		)
 	})
 
 	t.Run("failed to insert ports", func(t *testing.T) {

@@ -1,5 +1,5 @@
 run:
-  go: "1.21.3"
+  go: "1.21.4"
   timeout: 5m
   skip-dirs:
     - "testdata"
@@ -39,7 +39,7 @@ linters-settings:
       - name: time-naming
       - name: var-declaration
       - name: line-length-limit
-        arguments: [120]
+        arguments: [125]
       - name: unused-parameter
       - name: unused-receiver
 issues:

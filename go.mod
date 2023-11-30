@@ -1,6 +1,6 @@
 module github.com/rafaeltg/goports
 
-go 1.21.3
+go 1.21.4
 
 require (
 	github.com/caarlos0/env/v10 v10.0.0
