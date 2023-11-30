@@ -9,6 +9,8 @@ else
     GOPATH=$(shell go env GOPATH)
 endif
 
+export PATH := $(GOPATH)/bin:$(PATH)
+
 # targets
 
 .PHONY: install-linter
