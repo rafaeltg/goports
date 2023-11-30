@@ -40,6 +40,7 @@ func main() {
 		os.Interrupt,
 		syscall.SIGTERM,
 		syscall.SIGINT,
+		syscall.SIGKILL,
 	)
 	defer cancel()
 
@@ -62,7 +63,7 @@ func main() {
 
 		logger.InfoContext(ctx, "shutting down http server...")
 
-		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 		defer cancel()
 
 		err := srv.Shutdown(ctx)

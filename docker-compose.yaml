@@ -6,8 +6,9 @@ services:
       context: .
       dockerfile: Dockerfile
       target: server
+    container_name: ports-server
     ports:
-      - "8088:8088"
+      - 8088:8088
     environment:
       - ENVIRONMENT=prod
       - LOG_LEVEL=-10
@@ -20,12 +21,15 @@ services:
       context: .
       dockerfile: Dockerfile
       target: ingestor
+    container_name: ports-ingestor
     environment:
       - ENVIRONMENT=prod
       - LOG_LEVEL=-10
       - APP_NAME=ports-service
       - APP_VERSION=v0.0.1
       - INGESTOR_FILEPATH=/ingest/ports.json
+      - SERVER_HOST=server
+      - SERVER_PORT=8088
     volumes:
       - ./testdata:/ingest/
     depends_on:

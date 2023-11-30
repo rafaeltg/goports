@@ -38,8 +38,8 @@ func (m *portsMatcher) Matches(x interface{}) bool {
 		return false
 	}
 
-	for i, expectedItem := range m.expected {
-		if !PortMatcher(&expectedItem).Matches(&actual[i]) {
+	for i := range m.expected {
+		if !PortMatcher(&m.expected[i]).Matches(&actual[i]) {
 			return false
 		}
 	}

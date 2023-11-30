@@ -7,10 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/rafaeltg/goports/internal/adapters/client/http"
 	"github.com/rafaeltg/goports/internal/adapters/handler/ingest"
-	"github.com/rafaeltg/goports/internal/adapters/repository/memory"
 	"github.com/rafaeltg/goports/internal/core/config"
-	"github.com/rafaeltg/goports/internal/core/service"
 	"github.com/rafaeltg/goports/pkg/logging"
 )
 
@@ -42,15 +41,14 @@ func main() {
 		os.Interrupt,
 		syscall.SIGTERM,
 		syscall.SIGINT,
+		syscall.SIGKILL,
 	)
 	defer cancel()
 
 	// Dependency injection
-	memDB := memory.NewDatabase()
-	portRepo := memory.NewPortRepository(memDB, logger)
-	portSvc := service.NewPortService(portRepo, logger)
-
-	portsIngestor := ingest.NewPortsIngestor(portSvc, logger)
+	httpClient := http.NewCient(cfg.Server.URI())
+	portClient := http.NewPortClient(httpClient, logger)
+	portsIngestor := ingest.NewPortsIngestor(portClient, logger)
 
 	err = portsIngestor.Process(ctx, cfg.Ingestor.Filepath)
 	if err != nil {

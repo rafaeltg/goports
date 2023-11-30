@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-// Database represents an in memory Database
+// Database represents an in memory Database.
 type Database struct {
 	data map[string]any
 	mu   sync.Mutex

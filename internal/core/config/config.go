@@ -35,7 +35,8 @@ type (
 
 	// Server contains server environment variables.
 	Server struct {
-		Port int `env:"PORT" envDefault:"8080"`
+		Host string `env:"HOST" envDefault:"0.0.0.0"`
+		Port int    `env:"PORT" envDefault:"8080"`
 	}
 
 	// Ingestor contains ingestor environment variables.
@@ -57,4 +58,8 @@ func Load() (Configuration, error) {
 
 func (e Environment) IsProduction() bool {
 	return strings.ToUpper(string(e)) == string(Production)
+}
+
+func (s Server) URI() string {
+	return fmt.Sprintf("%s:%d", s.Host, s.Port)
 }

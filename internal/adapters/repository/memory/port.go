@@ -49,7 +49,6 @@ func (r *PortRepository) BulkUpsert(ctx context.Context, ports domain.Ports) err
 		default:
 			r.db.Set(ctx, p.ID, p)
 		}
-
 	}
 
 	return nil
